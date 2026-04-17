@@ -1,0 +1,217 @@
+# ==================== TRADING COINS ====================
+COIN_LIST:
+  # - BTC
+  # - ETH
+  - SOL
+  - XRP
+  - HBAR
+  - XLM
+  - BNB
+  - TON
+  - DOGE
+  - ADA
+  - TRX
+  - AVAX
+  - LTC
+  - LINK
+  - UNI
+  - ICP
+  - FIL
+  - AAVE
+  - ETC
+  - ARB
+  - OP
+  - NEAR
+  - DOT
+  - SUI
+  # HYPE
+  - CAKE
+  - MKR
+  - GALA
+  - RUNE
+  - XTZ
+  - SNX
+  - ZEC
+
+MAX_POSITIONS: 10
+POSITION_SIZE_PERCENT: 2.0
+MIN_CONFIDENCE: 0.55
+
+# ==================== RISK MANAGEMENT ====================
+# ==================== RISK MANAGEMENT ====================
+# LEVERAGE SETTINGS - COMMENTED OUT TO USE HYPERLIQUID DEFAULT
+# LEVERAGE: 10 # Fallback/Default leverage
+# DYNAMIC_LEVERAGE: true # Enable regime-based leverage
+#
+# # Leverage by Regime (Option 2: Volatility Adjusted)
+# LEVERAGE_BY_REGIME:
+#   CHOPPY: 5
+#   SIDEWAYS_QUIET: 5
+#   SIDEWAYS_VOLATILE: 5
+#   BULL: 15
+#   BEAR: 15
+STOP_LOSS_PERCENT: 3.0 # was: 2.0 — widened to allow 3h predictions room
+TAKE_PROFIT_PERCENT: 4.0 # was: 3.0
+MAX_POSITION_SIZE_PERCENT: 5.0
+DAILY_LOSS_LIMIT_PERCENT: 3.0 # Fix 4: reduced from 5.0 -> 3.0
+MAX_DAILY_TRADES_PER_SYMBOL: 6 # Fix 5: per-symbol daily cap
+MIN_HOLD_MINUTES: 120 # was: 30 — increased to match LOOK_AHEAD of 180 candles (3h)
+CLOSE_POSITIONS_ON_SHUTDOWN: false
+
+# ==================== DATA COLLECTION ====================
+DATA_DIR: data
+BINANCE_API_URL: https://api.binance.com/api
+TIMEFRAME_MINUTES: 1 # Candle size (1m candles)
+DATA_UPDATE_INTERVAL_MINUTES: 1 # How often to fetch fresh data (changed from 15 to 1 for real-time trading)
+LOOKBACK_PERIODS: 5000 # was: 200
+PRICE_FILE_TEMPLATE: "{coin}_1m.csv"
+
+# ==================== MODEL MANAGEMENT ====================
+MODEL_DIR: models
+RETRAIN_INTERVAL_DAYS: 7
+
+# LOOK_AHEAD must match the expected hold duration implied by TP/SL settings.
+# Formula: LOOK_AHEAD ≈ (minutes until TP is typically hit). With 4% TP on alts, this is
+# roughly 120-240 minutes of 1min candles.
+LOOK_AHEAD: 180 # was: 5
+PREDICTION_THRESHOLD: 0.015 # was: 0.005
+
+# ==================== FEATURE ENGINEERING ====================
+MA_PERIODS: [5, 10, 20, 50]
+RSI_PERIOD: 14
+ATR_PERIOD: 14
+
+# MACD settings
+MACD_FAST_PERIOD: 12
+MACD_SLOW_PERIOD: 26
+MACD_SIGNAL_PERIOD: 9
+
+# Bollinger Bands settings
+BB_WINDOW: 20
+BB_STD_DEV: 2.0
+
+# Volume indicator settings
+VOLUME_MA_PERIODS: [20, 50]
+VOLUME_SPIKE_MULTIPLIER: 2.0
+
+# Sideways / range features
+SUPPORT_RESIST_LOOKBACK: 100
+ROLLING_RANGE_WINDOW: 100
+SHORT_RSI_PERIOD: 7
+REALIZED_VOL_WINDOWS: [20, 50]
+
+# ==================== REGIME DETECTION ====================
+REGIME:
+  BULL:
+    FAST_MA_PERIOD: 20
+    SLOW_MA_PERIOD: 50
+    MA_SLOPE_LOOKBACK: 10
+    UPTREND_THRESHOLD: 0.001
+    POSITION_MULTIPLIER: 1.0
+    TAKE_PROFIT_MULTIPLIER: 1.2
+
+  BEAR:
+    FAST_MA_PERIOD: 20
+    SLOW_MA_PERIOD: 50
+    MA_SLOPE_LOOKBACK: 10
+    DOWNTREND_THRESHOLD: -0.001
+    POSITION_MULTIPLIER: 0.8
+    STOP_LOSS_MULTIPLIER: 1.2
+
+# ==================== SIDEWAYS DETECTION ====================
+SIDEWAYS:
+  VOL_QUIET_MAX: 0.005
+  VOL_VOLATILE_MIN: 0.015
+  POSITION_MULTIPLIER: 0.6
+  SIDEWAYS_DETECT_CONFIDENCE_MIN: 0.65
+
+  # use realized vol and range features
+  RANGE_WINDOW: 100
+  BAND_MAX_DRAWUP: 0.01
+  BAND_MAX_DRAWDOWN: 0.01
+  BAND_WIDTH_QUIET_MAX: 0.008
+  SIDEWAYS_SLOPE_WINDOW: 20
+  SIDEWAYS_SLOPE_THRESHOLD: 0.0005
+  TREND_SIGN_WINDOW: 10
+  TREND_FLIP_RATE_MIN: 0.4
+
+# ==================== MACHINE LEARNING ====================
+ML:
+  BULL:
+    RANDOM_FOREST:
+      n_estimators: 100
+      max_depth: 10
+      min_samples_split: 5
+      min_samples_leaf: 2
+      random_state: 42
+      class_weight: "balanced"
+
+  BEAR:
+    RANDOM_FOREST:
+      n_estimators: 100
+      max_depth: 10
+      min_samples_split: 5
+      min_samples_leaf: 2
+      random_state: 42
+      class_weight: "balanced"
+
+  NEUTRAL_QUIET:
+    RANDOM_FOREST:
+      n_estimators: 100
+      max_depth: 8
+      min_samples_split: 5
+      min_samples_leaf: 2
+      random_state: 42
+      class_weight: "balanced"
+
+  NEUTRAL_VOLATILE:
+    RANDOM_FOREST:
+      n_estimators: 100
+      max_depth: 8
+      min_samples_split: 5
+      min_samples_leaf: 2
+      random_state: 42
+      class_weight: "balanced"
+
+  NEUTRAL_CHOPPY:
+    RANDOM_FOREST:
+      n_estimators: 100
+      max_depth: 6
+      min_samples_split: 5
+      min_samples_leaf: 2
+      random_state: 42
+      class_weight: "balanced"
+
+  CHOPPY:
+    RANDOM_FOREST:
+      n_estimators: 100
+      max_depth: 6
+      min_samples_split: 5
+      min_samples_leaf: 2
+      random_state: 42
+      class_weight: "balanced"
+
+# ==================== LOGGING ====================
+LOG_DIR: logs
+LOG_LEVEL: INFO
+METRICS_DIR: logs
+
+# ==================== API SETTINGS ====================
+# DO NOT PUT KEYS HERE - Use config/.env instead!
+HYPERLIQUID_RPC_URL: https://api.hyperliquid.xyz
+USE_TESTNET: true
+APP_ENV: testnet
+
+# ==================== ENVIRONMENT ====================
+ENABLE_LIVE_TRADING: false # FIX 7: disabled until testnet validation passes
+RISK_MODE: conservative
+
+# ==================== MARKET DEPTH ====================
+MARKET_DEPTH:
+  ENABLED: true
+  LEVELS: 10                       # Order book levels to fetch
+  MAX_SPREAD_PCT: 0.15             # Skip if spread too wide (illiquid)
+  IMBALANCE_SKIP_THRESHOLD: -0.30  # Skip long if imbalance < this
+  IMBALANCE_CONFIRM_THRESHOLD: 0.20  # Boost confidence if imbalance > this (long)
+  CONFIDENCE_BOOST_MAX: 1.15       # Max multiplier when depth strongly confirms
+  CONFIDENCE_BOOST_MIN: 0.85       # Min multiplier when depth weakly opposes
